@@ -304,6 +304,9 @@ class ClassicalCalculator(base.HazardCalculator):
         """
         oq = self.oqparam
         psd = oq.pointsource_distance
+        smap = parallel.Starmap(classical, h5=self.datastore.hdf5,
+                                num_cores=oq.num_cores)
+        smap.monitor.save('srcfilter', self.src_filter())
         if oq.hazard_calculation_id and not oq.compare_with_classical:
             with util.read(self.oqparam.hazard_calculation_id) as parent:
                 self.full_lt = parent['full_lt']
@@ -338,9 +341,6 @@ class ClassicalCalculator(base.HazardCalculator):
                 logging.info('pointsource_distance=\n%s', pprint.pformat(dic))
             if len(vars(aw)) > 1:  # more than _extra
                 self.datastore['effect_by_mag_dst'] = aw
-        smap = parallel.Starmap(classical, h5=self.datastore.hdf5,
-                                num_cores=oq.num_cores)
-        smap.monitor.save('srcfilter', self.src_filter())
         self.submit_tasks(smap)
         acc0 = self.acc0()  # create the rup/ datasets BEFORE swmr_on()
         rlzs_by_grp = self.full_lt.get_rlzs_by_grp()
