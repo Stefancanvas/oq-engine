@@ -683,8 +683,7 @@ def build_hazard(pgetter, N, hstats, individual_curves,
     with monitor('read PoEs'):
         pgetter.init()
         if amplifier:
-            with hdf5.File(pgetter.filename, 'r') as f:
-                ampcode = f['sitecol'].ampcode
+            ampcode = monitor.read('srcfilter').sitecol.ampcode
             imtls = DictArray({imt: amplifier.amplevels
                                for imt in pgetter.imtls})
         else:
