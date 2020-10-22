@@ -516,10 +516,9 @@ class ClassicalCalculator(base.HazardCalculator):
         if nr:  # few sites, log the number of ruptures per magnitude
             logging.info('%s', nr)
         oq = self.oqparam
-        if oq.calculation_mode.endswith(('risk', 'damage', 'bcr')):
-            with hdf5.File(self.datastore.tempname, 'a') as cache:
-                cache['oqparam'] = oq
-                cache['rlzs_by_grp'] = self.full_lt.get_rlzs_by_grp()
+        with hdf5.File(self.datastore.tempname, 'a') as cache:
+            cache['oqparam'] = oq
+            cache['rlzs_by_grp'] = self.full_lt.get_rlzs_by_grp()
         data = []
         weights = [rlz.weight for rlz in self.realizations]
         pgetter = getters.PmapGetter(
@@ -537,9 +536,8 @@ class ClassicalCalculator(base.HazardCalculator):
                     trt = self.full_lt.trt_by_grp[key]
                     name = 'poes/grp-%02d' % key
                     self.datastore[name] = pmap
-                    if oq.calculation_mode.endswith(('risk', 'damage', 'bcr')):
-                        with hdf5.File(self.datastore.tempname, 'a') as cache:
-                            cache[name] = pmap
+                    with hdf5.File(self.datastore.tempname, 'a') as cache:
+                        cache[name] = pmap
                     extreme = max(
                         get_extreme_poe(pmap[sid].array, oq.imtls)
                         for sid in pmap)
@@ -587,11 +585,11 @@ class ClassicalCalculator(base.HazardCalculator):
         ct = oq.concurrent_tasks or 1
         logging.info('Building hazard statistics')
         self.weights = [rlz.weight for rlz in self.realizations]
-        dstore = (self.datastore.parent if oq.hazard_calculation_id
-                  else self.datastore)
+        filename = (self.datastore.parent.filename if oq.hazard_calculation_id
+                    else self.datastore.tempname)
         allargs = [  # this list is very fast to generate
             (getters.PmapGetter(
-                dstore, self.weights, t.sids, oq.imtls, oq.poes),
+                filename, self.weights, t.sids, oq.imtls, oq.poes),
              N, hstats, oq.individual_curves, oq.max_sites_disagg,
              self.amplifier)
             for t in self.sitecol.split_in_tiles(ct)]
